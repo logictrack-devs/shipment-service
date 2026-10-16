@@ -47,4 +47,11 @@ public class RepartidorController {
     public ResponseEntity<RepartidorResponseDto> obtenerPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(repartidorService.obtenerPorId(id));
     }
+
+    @PatchMapping("/{repartidorId}/asignar-envio/{envioId}")
+    public ResponseEntity<RepartidorResponseDto> asignarEnvio(
+            @PathVariable UUID repartidorId,
+            @PathVariable UUID envioId) {
+        return ResponseEntity.ok(repartidorService.asignarEnvio(repartidorId, envioId));
+    }
 }

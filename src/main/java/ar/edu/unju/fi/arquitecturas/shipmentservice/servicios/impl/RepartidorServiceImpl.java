@@ -4,7 +4,9 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.RepartidorReques
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.RepartidorResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoRepartidor;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.excepcion.RecursoNoEncontradoException;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Envio;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Repartidor;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.EnvioRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.RepartidorRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.RepartidorService;
 import lombok.RequiredArgsConstructor;
@@ -17,22 +19,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Implementación de los servicios de negocio para la gestión de repartidores.
- *
- * <p>
- * Procesa la lógica operativa de registro, filtrado de disponibilidad y consulta
- * paginada de repartidores.
- * </p>
- *
- * @author Equipo LogicTrack Devs
- * @version 1.0
- */
 @Service
 @RequiredArgsConstructor
 public class RepartidorServiceImpl implements RepartidorService {
 
     private final RepartidorRepository repartidorRepository;
+    private final EnvioRepository envioRepository;
 
     @Override
     @Transactional
@@ -57,9 +49,10 @@ public class RepartidorServiceImpl implements RepartidorService {
     @Override
     @Transactional(readOnly = true)
     public List<RepartidorResponseDto> listarDisponibles() {
-        return repartidorRepository.findByEstado(EstadoRepartidor.ACTIVO).stream()
+        return repartidorRepository.findByEstado(EstadoRepartidor.ACTIVO)
+                .stream()
                 .map(this::mapearADto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -73,16 +66,18 @@ public class RepartidorServiceImpl implements RepartidorService {
     @Override
     @Transactional
     public RepartidorResponseDto asignarEnvio(UUID repartidorId, UUID envioId) {
-        // PENDIENTE PARTE 2: Se completará al integrar la entidad Envio de Flavio
-        throw new UnsupportedOperationException("El método de asignación estará disponible al integrar la entidad Envio.");
+        Repartidor repartidor = repartidorRepository.findById(repartidorId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el repartidor con ID: " + repartidorId));
+
+        Envio envio = envioRepository.findById(envioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el envío con ID: " + envioId));
+
+        envio.setRepartidor(repartidor);
+        envioRepository.save(envio);
+
+        return mapearADto(repartidor);
     }
 
-    /**
-     * Mapea una entidad {@link Repartidor} a su correspondiente DTO de respuesta.
-     *
-     * @param repartidor Entidad de dominio a mapear.
-     * @return DTO {@link RepartidorResponseDto} con los atributos mapeados.
-     */
     private RepartidorResponseDto mapearADto(Repartidor repartidor) {
         return RepartidorResponseDto.builder()
                 .id(repartidor.getId())
