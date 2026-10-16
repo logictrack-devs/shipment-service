@@ -2,6 +2,9 @@ package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios;
 
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.RepartidorRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.RepartidorResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -9,7 +12,7 @@ import java.util.UUID;
  * Interfaz que define el contrato de servicios de negocio para repartidores.
  *
  * <p>
- * Contempla el registro, listado general, listado por disponibilidad y la asignacion a un envio.
+ * Contempla el registro, listado general paginado, listado por disponibilidad y la asignacion a un envio.
  * </p>
  *
  * @author Equipo LogicTrack Devs
@@ -26,11 +29,12 @@ public interface RepartidorService {
     RepartidorResponseDto registrarRepartidor(RepartidorRequestDto request);
 
     /**
-     * Retorna la lista con todos los repartidores guardados en el sistema.
+     * Retorna una pagina de repartidores guardados en el sistema segun los parametros de paginacion.
      *
-     * @return Lista de DTOs de repartidores.
+     * @param pageable Objeto con la informacion de paginacion (pagina, tamaño, orden).
+     * @return Pagina de DTOs de repartidores.
      */
-    List<RepartidorResponseDto> listarTodos();
+    Page<RepartidorResponseDto> listarTodosPaginado(Pageable pageable);
 
     /**
      * Retorna unicamente la lista de repartidores con estado ACTIVO.
