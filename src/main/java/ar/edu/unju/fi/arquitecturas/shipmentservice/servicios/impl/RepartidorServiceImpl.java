@@ -3,6 +3,7 @@ package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.RepartidorRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.RepartidorResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoRepartidor;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.excepcion.RecursoNoEncontradoException;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Repartidor;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.RepartidorRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.RepartidorService;
@@ -65,7 +66,7 @@ public class RepartidorServiceImpl implements RepartidorService {
     @Transactional(readOnly = true)
     public RepartidorResponseDto obtenerPorId(UUID id) {
         Repartidor repartidor = repartidorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Repartidor no encontrado con el ID: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el repartidor con el ID: " + id));
         return mapearADto(repartidor);
     }
 
