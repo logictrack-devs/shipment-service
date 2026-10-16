@@ -2,6 +2,8 @@ package ar.edu.unju.fi.arquitecturas.shipmentservice.modelo;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -14,9 +16,19 @@ import lombok.Setter;
 
 import java.util.UUID;
 
+
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoRepartidor;
 
-
+/**
+ * Entidad JPA que representa a un repartidor en la plataforma de envíos.
+ * <p>
+ * Mapea la tabla {@code repartidores} en la base de datos relacional y almacena
+ * los datos de identificación y estado del repartidor.
+ * </p>
+ *
+ * @author Equipo LogicTrack Devs
+ * @version 1.0
+ */
 @Entity
 @Table(name = "repartidores")
 @Getter
@@ -24,6 +36,8 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoRepartidor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+
+
 public class Repartidor {
 
     @Id
@@ -35,7 +49,10 @@ public class Repartidor {
 
     @Column(name = "tipo_vehiculo", nullable = false, length=50)
     private String tipoVehiculo;
-
-    @Column(name="estadorepartidor")
-    private EstadoRepartidor estado;
+         
+   
+    @Enumerated(EnumType.STRING)
+    @Column(name="estadorepartidor",nullable=false)
+    @Builder.Default
+    private EstadoRepartidor estado=EstadoRepartidor.ACTIVO;
 }
