@@ -40,10 +40,10 @@ public class Envio {
     private EstadoEnvio estadoEnvio;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id", nullable = false)
+    @JoinColumn(name = "clienteId", nullable = false)
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id", nullable = false)
+    @JoinColumn(name = "repartidorId", nullable = false)
     private Repartidor repartidor;
 }
