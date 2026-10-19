@@ -1,6 +1,5 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.controlador;
 
-
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.RepartidorRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.RepartidorResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.RepartidorService;
@@ -56,4 +55,3 @@ public class RepartidorController {
         return ResponseEntity.ok(repartidorService.asignarEnvio(repartidorId, envioId));
     }
 }
-

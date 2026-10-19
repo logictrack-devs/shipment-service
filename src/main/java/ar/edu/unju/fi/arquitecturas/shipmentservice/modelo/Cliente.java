@@ -16,10 +16,6 @@ import java.util.UUID;
 
 /**
  * Entidad JPA que representa a un cliente solicitante de envíos en la plataforma.
- * <p>
- * Mapea la tabla {@code clientes} en la base de datos relacional y almacena
- * los datos de contacto e identificación requeridos para el registro de solicitudes.
- * </p>
  *
  * @author Equipo LogicTrack Devs
  * @version 1.0
@@ -35,14 +31,15 @@ public class Cliente extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "telefono", nullable = false, length = 20)
     private String telefono;
 }

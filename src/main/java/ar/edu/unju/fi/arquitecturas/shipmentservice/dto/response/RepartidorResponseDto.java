@@ -1,6 +1,5 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response;
 
-
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoRepartidor;
 import lombok.*;
 import java.util.UUID;
@@ -28,4 +27,3 @@ public class RepartidorResponseDto {
     private String tipoVehiculo;
     private EstadoRepartidor estado;
 }
-

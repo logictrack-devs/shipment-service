@@ -1,6 +1,5 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request;
 
-
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -28,4 +27,3 @@ public class RepartidorRequestDto {
     @NotBlank(message = "El tipo de vehiculo es obligatorio.")
     private String tipoVehiculo;
 }
-
