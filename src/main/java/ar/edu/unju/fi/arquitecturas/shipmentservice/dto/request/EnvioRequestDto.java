@@ -1,5 +1,6 @@
-package ar.edu.unju.fi.arquitecturas.shipmentservice.dto;
+package ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request;
 
+import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -16,4 +17,7 @@ public class EnvioRequestDto {
 
     @NotBlank(message = "Debe ingresar un id valido.")
     private UUID id;
+
+    @NotBlank(message = "Debe ingresar el nuevo estado")
+    private EstadoEnvio estado;
 }

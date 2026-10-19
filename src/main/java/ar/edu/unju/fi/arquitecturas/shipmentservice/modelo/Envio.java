@@ -39,6 +39,12 @@ public class Envio {
     @Column(name = "estado")
     private EstadoEnvio estadoEnvio;
 
+    @Column(name = "direccionOrigen")
+    private Direccion direccionOrigen;
+
+    @Column(name = "direccionDestino")
+    private Direccion direccionDestino;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "clienteId", nullable = false)
     private Cliente cliente;
