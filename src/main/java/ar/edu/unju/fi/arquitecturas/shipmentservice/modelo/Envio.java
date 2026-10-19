@@ -2,14 +2,12 @@ package ar.edu.unju.fi.arquitecturas.shipmentservice.modelo;
 
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity
+@Builder
 @Getter
 @Setter
 @NoArgsConstructor
@@ -36,8 +34,12 @@ public class Envio {
     @Column(name = "tarifa", nullable = false, scale = 2)
     private Double tarifa;
 
-    @Column(name = "estado")
+
     private EstadoEnvio estadoEnvio;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado")
+    @Builder.Default
+    private EstadoEnvio estado = EstadoEnvio.PENDIENTE;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "clienteId", nullable = false)
@@ -46,4 +48,8 @@ public class Envio {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "repartidorId", nullable = false)
     private Repartidor repartidor;
+
+ public boolean puedeCancelarse() {
+    return estado == EstadoEnvio.PENDIENTE;
+}
 }

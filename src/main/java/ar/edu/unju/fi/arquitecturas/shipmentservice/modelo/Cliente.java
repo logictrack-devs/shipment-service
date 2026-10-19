@@ -27,7 +27,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Cliente {
+public class Cliente extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
