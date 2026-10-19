@@ -2,14 +2,12 @@ package ar.edu.unju.fi.arquitecturas.shipmentservice.modelo;
 
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity
+@Builder
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,4 +37,11 @@ public class Envio {
     @Column(name = "estado")
     private EstadoEnvio estadoEnvio;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "clienteId", nullable = false)
+    private Cliente cliente;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "repartidorId", nullable = false)
+    private Repartidor repartidor;
 }
