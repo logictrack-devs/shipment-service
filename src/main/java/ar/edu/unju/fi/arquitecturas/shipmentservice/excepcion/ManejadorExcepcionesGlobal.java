@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -15,7 +16,7 @@ import java.util.Map;
  * lanzadas en la capa de controlador o servicios, estandarizando la respuesta JSON
  * de error con información de auditoría y códigos de estado HTTP pertinentes.
  * </p>
- *
+
  * @author Equipo LogicTrack Devs
  * @version 1.0
  */
@@ -35,6 +36,20 @@ public class ManejadorExcepcionesGlobal {
                 "error", ex.getMessage(),
                 "status", HttpStatus.BAD_REQUEST.value()
         ));
+    }
+
+    @ExceptionHandler({Excepciones_envio.TransicionEstadoInvalidaException.class, Excepciones_envio.RepartidorNoAsignadoException.class})
+    public ResponseEntity<Map<String, Object>> handleReglaNegocio(RuntimeException ex) {
+        return construirRespuesta(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage()); // 422
+    }
+
+    private ResponseEntity<Map<String, Object>> construirRespuesta(HttpStatus status, String mensaje) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("mensaje", mensaje);
+        return ResponseEntity.status(status).body(body);
     }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)

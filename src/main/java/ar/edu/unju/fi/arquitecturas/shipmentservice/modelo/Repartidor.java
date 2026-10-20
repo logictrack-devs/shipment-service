@@ -37,8 +37,7 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoRepartidor;
 @AllArgsConstructor
 @Builder
 
-
-public class Repartidor {
+public class Repartidor extends Auditable{
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
