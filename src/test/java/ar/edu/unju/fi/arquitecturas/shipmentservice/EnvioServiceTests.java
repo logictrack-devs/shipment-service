@@ -64,7 +64,7 @@ public class EnvioServiceTests {
         envio.setLargo(30.0);
         envio.setAncho(20.0);
         envio.setCliente(cliente);
-        envio.setEstadoEnvio(EstadoEnvio.PENDIENTE);
+        envio.setEstado(EstadoEnvio.PENDIENTE);
     }
 
     @Test
@@ -196,7 +196,7 @@ public class EnvioServiceTests {
         Envio segundoEnvio = new Envio();
         segundoEnvio.setId(UUID.randomUUID());
         segundoEnvio.setCodigoSeguimiento("ENV-002");
-        segundoEnvio.setEstadoEnvio(EstadoEnvio.PENDIENTE);
+        segundoEnvio.setEstado(EstadoEnvio.PENDIENTE);
         segundoEnvio.setCliente(cliente);
 
         when(envioRepository.findAll())
@@ -226,7 +226,7 @@ public class EnvioServiceTests {
         Envio envioCancelado = new Envio();
         envioCancelado.setId(UUID.randomUUID());
         envioCancelado.setCodigoSeguimiento("ENV-002");
-        envioCancelado.setEstadoEnvio(EstadoEnvio.CANCELADO);
+        envioCancelado.setEstado(EstadoEnvio.CANCELADO);
         envioCancelado.setCliente(cliente);
 
         when(envioRepository.findAll())
@@ -254,7 +254,7 @@ public class EnvioServiceTests {
 
         envioService.cancelarEnvio("ENV-001");
 
-        assertEquals(EstadoEnvio.CANCELADO, envio.getEstadoEnvio());
+        assertEquals(EstadoEnvio.CANCELADO, envio.getEstado());
         verify(envioRepository).save(envio);
     }
 
@@ -273,7 +273,7 @@ public class EnvioServiceTests {
 
     @Test
     void cancelarEnvio_CuandoNoEstaPendienteNoLoModifica() {
-        envio.setEstadoEnvio(EstadoEnvio.CANCELADO);
+        envio.setEstado(EstadoEnvio.CANCELADO);
 
         when(envioRepository.findByCodigoSeguimiento("ENV-001"))
                 .thenReturn(Optional.of(envio));
@@ -282,7 +282,7 @@ public class EnvioServiceTests {
 
         assertEquals(
                 EstadoEnvio.CANCELADO,
-                envio.getEstadoEnvio()
+                envio.getEstado()
         );
 
         verify(envioRepository, never()).save(any(Envio.class));
