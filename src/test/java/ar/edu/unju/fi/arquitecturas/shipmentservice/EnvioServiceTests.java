@@ -1,4 +1,5 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice;
+
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.EnvioResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
@@ -7,12 +8,11 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Cliente;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Envio;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.ClienteRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.EnvioRepository;
-
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl.EnvioServiceImpl;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,16 +25,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-/****
+/**
  * Pruebas unitarias destinadas a testear las
- * funcionalidades de la gestión de envíos
+ * funcionalidades de la gestión de envíos.
  *
- * @author Equipo LogicTrack devs
+ * @author Equipo LogicTrack Devs
  * @version 1.0
  */
-
 @ExtendWith(MockitoExtension.class)
 public class EnvioServiceTests {
+
     @Mock
     private EnvioRepository envioRepository;
 
@@ -54,7 +54,7 @@ public class EnvioServiceTests {
 
         cliente = new Cliente();
         UUID clienteId = UUID.randomUUID();
-        cliente.setId(clienteId); // Ajustar si el ID no es Long.
+        cliente.setId(clienteId);
         cliente.setNombre("Cliente de prueba");
 
         envio = new Envio();
@@ -63,6 +63,7 @@ public class EnvioServiceTests {
         envio.setPeso(2.5);
         envio.setLargo(30.0);
         envio.setAncho(20.0);
+        envio.setAlto(10.0);
         envio.setCliente(cliente);
         envio.setEstado(EstadoEnvio.PENDIENTE);
     }
@@ -76,7 +77,7 @@ public class EnvioServiceTests {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         EnvioResponseDto resultado = envioService.registrarEnvio(
-                2.5, 30.0, 20.0, cliente, null, null
+                2.5, 30.0, 20.0, 10.0, cliente, null, null
         );
 
         assertNotNull(resultado);
@@ -98,7 +99,7 @@ public class EnvioServiceTests {
         assertThrows(
                 RecursoNoEncontradoException.class,
                 () -> envioService.registrarEnvio(
-                        2.5, 30.0, 20.0, cliente, null, null
+                        2.5, 30.0, 20.0, 10.0, cliente, null, null
                 )
         );
 
