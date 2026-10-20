@@ -13,8 +13,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "envio")
+public class Envio extends Auditable {
 
-public class Envio {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -28,27 +28,47 @@ public class Envio {
     @Column(name = "ancho", nullable = false, scale = 2)
     private Double ancho;
 
+    @Column(name = "alto", nullable = false, scale = 2)
+    private Double alto;
+
     @Column(name = "largo", nullable = false, scale = 2)
     private Double largo;
 
     @Column(name = "tarifa", nullable = false, scale = 2)
     private Double tarifa;
 
-
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado")
+    @Column(name = "estado", nullable = false)
     @Builder.Default
     private EstadoEnvio estado = EstadoEnvio.PENDIENTE;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "calle", column = @Column(name = "origen_calle")),
+            @AttributeOverride(name = "numero", column = @Column(name = "origen_numero")),
+            @AttributeOverride(name = "ciudad", column = @Column(name = "origen_ciudad")),
+            @AttributeOverride(name = "codigoPostal", column = @Column(name = "origen_codigo_postal"))
+    })
+    private Direccion direccionOrigen;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "calle", column = @Column(name = "destino_calle")),
+            @AttributeOverride(name = "numero", column = @Column(name = "destino_numero")),
+            @AttributeOverride(name = "ciudad", column = @Column(name = "destino_ciudad")),
+            @AttributeOverride(name = "codigoPostal", column = @Column(name = "destino_codigo_postal"))
+    })
+    private Direccion direccionDestino;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "clienteId", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "repartidorId", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "repartidorId", nullable = true)
     private Repartidor repartidor;
 
- public boolean puedeCancelarse() {
-    return estado == EstadoEnvio.PENDIENTE;
-}
+    public boolean puedeCancelarse() {
+        return estado == EstadoEnvio.PENDIENTE;
+    }
 }
