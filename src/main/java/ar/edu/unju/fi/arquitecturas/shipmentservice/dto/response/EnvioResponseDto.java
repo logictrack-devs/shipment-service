@@ -1,6 +1,7 @@
-package ar.edu.unju.fi.arquitecturas.shipmentservice.dto;
+package ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response;
 
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Direccion;
 import lombok.*;
 
 import java.util.UUID;
@@ -18,4 +19,8 @@ public class EnvioResponseDto {
     private Double largo;
     private Double tarifa;
     private EstadoEnvio estado;
+    private Direccion origen;
+    private Direccion destino;
+    private UUID clienteId;
+    private String nombreCliente;
 }
