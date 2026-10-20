@@ -27,6 +27,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Implementación de los servicios de negocio vinculados a la gestión de envíos.
+ *
+ * @author Equipo LogicTrack Devs
+ * @version 1.0
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -36,19 +42,41 @@ public class EnvioServiceImpl implements EnvioService {
     private final ClienteRepository clienteRepository;
     private final HistorialEstadoEnvioRepository historialRepository;
 
+    /**
+     * Registra un nuevo envío calculando su tarifa e inicializando el código de seguimiento automáticamente.
+     *
+     * @param peso Peso del paquete en kilogramos.
+     * @param largo Largo del paquete en centímetros.
+     * @param ancho Ancho del paquete en centímetros.
+     * @param cliente Instancia del cliente solicitante.
+     * @param origen Dirección de origen.
+     * @param destino Dirección de destino.
+     * @return DTO con la información del envío registrado.
+     */
     @Override
     @Transactional
-    public EnvioResponseDto registrarEnvio(Double peso, Double largo, Double ancho, Cliente cliente, Direccion origen, Direccion destino) {
-        log.info("Registrando envío para el cliente: {}", cliente.getNombre());
+    public EnvioResponseDto registrarEnvio(Double peso, Double largo, Double ancho, Double alto, Cliente cliente, Direccion origen, Direccion destino) {
+        log.info("Registrando envío para el cliente con ID: {}", cliente.getId());
         Cliente clienteEnvio = clienteRepository.findById(cliente.getId())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado."));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado con ID: " + cliente.getId()));
 
-        Envio nuevoEnvio = new Envio();
-        nuevoEnvio.setAncho(ancho);
-        nuevoEnvio.setLargo(largo);
-        nuevoEnvio.setPeso(peso);
-        nuevoEnvio.setCliente(clienteEnvio);
-        nuevoEnvio.setEstado(EstadoEnvio.PENDIENTE);
+        String codigoSeguimiento = "ENV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        // Cálculo de tarifa considerando las 3 dimensiones y el peso
+        Double tarifaCalculada = 1000.0 + (peso * 200.0) + (largo * ancho * alto * 0.1);
+
+        Envio nuevoEnvio = Envio.builder()
+                .codigoSeguimiento(codigoSeguimiento)
+                .peso(peso)
+                .largo(largo)
+                .ancho(ancho)
+                .alto(alto) // <--- Se asigna el alto ingresado
+                .tarifa(tarifaCalculada)
+                .estado(EstadoEnvio.PENDIENTE)
+                .cliente(clienteEnvio)
+                .direccionOrigen(origen)
+                .direccionDestino(destino)
+                .build();
 
         Envio envioGuardar = envioRepository.save(nuevoEnvio);
         return mapearResponseDto(envioGuardar);
@@ -66,7 +94,7 @@ public class EnvioServiceImpl implements EnvioService {
     @Override
     @Transactional(readOnly = true)
     public EnvioResponseDto getByCodigoSeguimiento(String codigoSeguimiento) {
-        log.info("Buscando envío con Cod. Seguimiento: {}.", codigoSeguimiento);
+        log.info("Buscando envío con Cod. Seguimiento: {}", codigoSeguimiento);
         Envio envio = envioRepository.findByCodigoSeguimiento(codigoSeguimiento)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Envío no encontrado."));
         return mapearResponseDto(envio);
@@ -154,7 +182,7 @@ public class EnvioServiceImpl implements EnvioService {
     @Override
     @Transactional
     public void cancelarEnvio(String codigoSeguimiento) {
-        log.info("Cancelando envío correspondiente al Cod. Seguimiento: {}.", codigoSeguimiento);
+        log.info("Cancelando envío correspondiente al Cod. Seguimiento: {}", codigoSeguimiento);
         Envio envio = envioRepository.findByCodigoSeguimiento(codigoSeguimiento)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Envío no encontrado."));
         if (envio.getEstado() == EstadoEnvio.PENDIENTE) {

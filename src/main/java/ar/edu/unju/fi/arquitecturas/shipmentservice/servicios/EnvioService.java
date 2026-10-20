@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface EnvioService {
-    EnvioResponseDto registrarEnvio(Double peso, Double largo, Double ancho, Cliente cliente, Direccion origen, Direccion destino);
+    EnvioResponseDto registrarEnvio(Double peso, Double largo, Double ancho, Double alto, Cliente cliente, Direccion origen, Direccion destino);
     EnvioResponseDto getById(UUID id);
     EnvioResponseDto getByCodigoSeguimiento(String codigoSeguimiento);
     EnvioResponseDto updateEnvio(String codigoSeguimiento, EnvioRequestDto request);
@@ -22,4 +22,3 @@ public interface EnvioService {
     List<HistorialEstadoResponseDto> obtenerHistorial(UUID envioId);
     void cancelarEnvio(String codigoSeguimiento);
 }
-
