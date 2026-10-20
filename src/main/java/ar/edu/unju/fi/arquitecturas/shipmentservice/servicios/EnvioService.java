@@ -1,12 +1,10 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios;
 
-import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioRequestDto;
-import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.EnvioResponseDto;
-import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
-import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Cliente;
-import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Direccion;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.EnvioRequestDto;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.EnvioResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.CambioEstadoRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.HistorialEstadoResponseDto;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
 import org.springframework.transaction.annotation.Transactional;
 
 

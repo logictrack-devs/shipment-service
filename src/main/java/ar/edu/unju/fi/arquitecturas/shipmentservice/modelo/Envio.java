@@ -35,17 +35,10 @@ public class Envio {
     private Double tarifa;
 
 
-    private EstadoEnvio estadoEnvio;
     @Enumerated(EnumType.STRING)
     @Column(name = "estado")
     @Builder.Default
     private EstadoEnvio estado = EstadoEnvio.PENDIENTE;
-
-    @Column(name = "direccionOrigen")
-    private Direccion direccionOrigen;
-
-    @Column(name = "direccionDestino")
-    private Direccion direccionDestino;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "clienteId", nullable = false)
