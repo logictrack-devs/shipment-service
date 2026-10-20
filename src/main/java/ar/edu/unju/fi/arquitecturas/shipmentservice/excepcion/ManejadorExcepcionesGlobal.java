@@ -50,8 +50,6 @@ public class ManejadorExcepcionesGlobal {
         body.put("mensaje", mensaje);
         return ResponseEntity.status(status).body(body);
     }
-    }
-
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<Map<String, Object>> manejarRecursoNoEncontrado(RecursoNoEncontradoException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
@@ -61,4 +59,7 @@ public class ManejadorExcepcionesGlobal {
                 "mensaje", ex.getMessage()
         ));
     }
-}
+    }
+
+
+

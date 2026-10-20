@@ -35,7 +35,6 @@ public class Envio {
     private Double tarifa;
 
 
-    private EstadoEnvio estadoEnvio;
     @Enumerated(EnumType.STRING)
     @Column(name = "estado")
     @Builder.Default
