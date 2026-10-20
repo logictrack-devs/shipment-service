@@ -1,7 +1,7 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.controlador;
 
 
-import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.EnvioResponseDto;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.EnvioResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.CambioEstadoRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.HistorialEstadoResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.EnvioService;
