@@ -3,6 +3,7 @@ package ar.edu.unju.fi.arquitecturas.shipmentservice.modelo;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
@@ -59,14 +60,13 @@ public class Envio extends Auditable {
             @AttributeOverride(name = "codigoPostal", column = @Column(name = "destino_codigo_postal"))
     })
     private Direccion direccionDestino;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "clienteId", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "repartidorId", nullable = true)
-    private Repartidor repartidor;
+    // REEMPLAZÁ LA RELACIÓN ANTERIOR POR ESTA COLUMNA SIMPLE:
+    @Column(name = "repartidor_id", nullable = true)
+    private UUID repartidorId;
 
     public boolean puedeCancelarse() {
         return estado == EstadoEnvio.PENDIENTE;

@@ -1,5 +1,6 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios;
 
+
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.CambioEstadoRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.EnvioResponseDto;
@@ -21,4 +22,17 @@ public interface EnvioService {
     EnvioResponseDto cambiarEstado(UUID id, CambioEstadoRequestDto request);
     List<HistorialEstadoResponseDto> obtenerHistorial(UUID envioId);
     void cancelarEnvio(String codigoSeguimiento);
+
+    // 👈 ESTA ES LA LÍNEA NUEVA QUE DEBÉS AGREGAR:
+    EnvioResponseDto asignarRepartidor(UUID envioId, UUID repartidorId);
 }
+
+    /**
+     * Asigna un repartidor a un envío. Valida contra courier-service que el repartidor
+     * exista y esté ACTIVO, y que el envío esté PENDIENTE.
+     *
+     * @param envioId       identificador del envío.
+     * @param repartidorId  identificador del repartidor (vive en courier-service).
+     * @return el envío con el repartidor asignado.
+     */
+

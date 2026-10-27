@@ -9,3 +9,8 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    security:
+      oauth2:
+        resourceserver:
+          jwt:
+            public-key-location: classpath:certs/public.pem

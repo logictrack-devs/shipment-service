@@ -17,7 +17,6 @@ public class EnvioResponseDto {
     private Double peso;
     private Double ancho;
     private Double largo;
-    private Double tarifa;
     private EstadoEnvio estado;
     private Direccion origen;
     private Direccion destino;

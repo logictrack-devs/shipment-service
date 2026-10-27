@@ -7,6 +7,7 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Cliente;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.EnvioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ import java.util.UUID;
  * @author Equipo LogicTrack Devs
  * @version 1.0
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/envios")
 @RequiredArgsConstructor
@@ -74,5 +76,19 @@ public class EnvioController {
     @GetMapping("/{id}/historial")
     public ResponseEntity<List<HistorialEstadoResponseDto>> historial(@PathVariable UUID id) {
         return ResponseEntity.ok(envioService.obtenerHistorial(id));
+    }
+    /**
+     * 👈 ENDPOINT NUEVO: Permite asignar un repartidor desde la API de Envíos.
+     * Atiende exactamente la URL solicitada por Mica:
+     * PATCH /api/v1/envios/{envioId}/asignar-repartidor/{repartidorId}
+     */
+    @PatchMapping("/{envioId}/asignar-repartidor/{repartidorId}")
+    public ResponseEntity<EnvioResponseDto> asignarRepartidor(
+            @PathVariable UUID envioId,
+            @PathVariable UUID repartidorId) {
+
+        log.info("API: Recibida petición para asignar el repartidor {} al envío {}", repartidorId, envioId);
+        EnvioResponseDto response = envioService.asignarRepartidor(envioId, repartidorId);
+        return ResponseEntity.ok(response);
     }
 }

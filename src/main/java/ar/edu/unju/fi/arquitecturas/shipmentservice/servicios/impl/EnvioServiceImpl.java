@@ -1,18 +1,18 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl;
 
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.RepartidorExternoDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.CambioEstadoRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.EnvioResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.HistorialEstadoResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
-import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoRepartidor;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.excepcion.Excepciones_envio;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.excepcion.ExcepcionesCourier;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.excepcion.RecursoNoEncontradoException;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Cliente;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Direccion;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Envio;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.HistorialEstadoEnvio;
-import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Repartidor;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.ClienteRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.EnvioRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.HistorialEstadoEnvioRepository;
@@ -21,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,9 +31,10 @@ import java.util.stream.Collectors;
 
 /**
  * Implementación de los servicios de negocio vinculados a la gestión de envíos.
+ * Los repartidores se consultan y validan en courier-service mediante {@link RestTemplate}.
  *
  * @author Equipo LogicTrack Devs
- * @version 1.0
+ * @version 2.0
  */
 @Service
 @Slf4j
@@ -41,18 +44,8 @@ public class EnvioServiceImpl implements EnvioService {
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final HistorialEstadoEnvioRepository historialRepository;
+    private final RestTemplate restTemplate; // Inyección de tu RestTemplate nativo de Spring
 
-    /**
-     * Registra un nuevo envío calculando su tarifa e inicializando el código de seguimiento automáticamente.
-     *
-     * @param peso Peso del paquete en kilogramos.
-     * @param largo Largo del paquete en centímetros.
-     * @param ancho Ancho del paquete en centímetros.
-     * @param cliente Instancia del cliente solicitante.
-     * @param origen Dirección de origen.
-     * @param destino Dirección de destino.
-     * @return DTO con la información del envío registrado.
-     */
     @Override
     @Transactional
     public EnvioResponseDto registrarEnvio(Double peso, Double largo, Double ancho, Double alto, Cliente cliente, Direccion origen, Direccion destino) {
@@ -62,21 +55,22 @@ public class EnvioServiceImpl implements EnvioService {
 
         String codigoSeguimiento = "ENV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        // Cálculo de tarifa considerando las 3 dimensiones y el peso
         Double tarifaCalculada = 1000.0 + (peso * 200.0) + (largo * ancho * alto * 0.1);
 
+        // Se usa la alternativa segura de pasar el proxy directo de Hibernate o usar setter por fuera
         Envio nuevoEnvio = Envio.builder()
                 .codigoSeguimiento(codigoSeguimiento)
                 .peso(peso)
                 .largo(largo)
                 .ancho(ancho)
-                .alto(alto) // <--- Se asigna el alto ingresado
+                .alto(alto)
                 .tarifa(tarifaCalculada)
                 .estado(EstadoEnvio.PENDIENTE)
-                .cliente(clienteEnvio)
                 .direccionOrigen(origen)
                 .direccionDestino(destino)
                 .build();
+
+        nuevoEnvio.setCliente(clienteEnvio); // Evita problemas de Lombok Builder con herencia
 
         Envio envioGuardar = envioRepository.save(nuevoEnvio);
         return mapearResponseDto(envioGuardar);
@@ -142,10 +136,11 @@ public class EnvioServiceImpl implements EnvioService {
         }
 
         if (destino == EstadoEnvio.EN_RUTA) {
-            Repartidor repartidor = envio.getRepartidor();
-            if (repartidor == null || repartidor.getEstado() != EstadoRepartidor.ACTIVO) {
+            UUID repartidorId = envio.getRepartidorId(); // Usa tu columna simple
+            if (repartidorId == null) {
                 throw new Excepciones_envio.RepartidorNoAsignadoException(envioId);
             }
+            validarRepartidorActivo(repartidorId);
         }
 
         envio.setEstado(destino);
@@ -163,6 +158,49 @@ public class EnvioServiceImpl implements EnvioService {
         return mapearResponseDto(envio);
     }
 
+    /**
+     * Asigna un repartidor externo al envío guardando únicamente su UUID de referencia.
+     */
+    @Override
+    @Transactional
+    public EnvioResponseDto asignarRepartidor(UUID envioId, UUID repartidorId) {
+        log.info("Asignando el repartidor simple {} al envío {}", repartidorId, envioId);
+
+        Envio envio = envioRepository.findById(envioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el envío con ID: " + envioId));
+
+        validarRepartidorActivo(repartidorId);
+
+        envio.setRepartidorId(repartidorId); // Se persiste en tu columna de base de datos
+        Envio envioGuardado = envioRepository.save(envio);
+
+        log.info("Columna 'repartidor_id' actualizada con éxito para el envío {}", envioId);
+        return mapearResponseDto(envioGuardado);
+    }
+
+    /**
+     * Valida mediante RestTemplate si el repartidor existe y se encuentra ACTIVO en courier-service.
+     */
+    private void validarRepartidorActivo(UUID repartidorId) {
+        String url = "http://localhost:8082/api/v1/repartidores/" + repartidorId;
+        try {
+            log.info("Consultando estado del repartidor {} vía RestTemplate", repartidorId);
+            RepartidorExternoDto repartidor = restTemplate.getForObject(url, RepartidorExternoDto.class);
+
+            if (repartidor == null || !"ACTIVO".equalsIgnoreCase(repartidor.getEstado())) {
+                log.warn("El repartidor {} no está ACTIVO en courier-service", repartidorId);
+                throw new ExcepcionesCourier.RepartidorNoActivoException("El repartidor no se encuentra activo.");
+            }
+        } catch (HttpClientErrorException.NotFound e) {
+            // Excepción nativa de RestTemplate para capturar respuestas 404 de Mica
+            log.error("Repartidor con ID {} no encontrado en courier-service (404)", repartidorId);
+            throw new RecursoNoEncontradoException("El repartidor con ID " + repartidorId + " no existe.");
+        } catch (Exception e) {
+            log.error("Error de comunicación HTTP con courier-service al validar repartidor {}", repartidorId, e);
+            throw new ExcepcionesCourier.ErrorComunicacionCourierException("Error al validar el repartidor externo.");
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<HistorialEstadoResponseDto> obtenerHistorial(UUID envioId) {
@@ -178,7 +216,6 @@ public class EnvioServiceImpl implements EnvioService {
                         .build())
                 .toList();
     }
-
     @Override
     @Transactional
     public void cancelarEnvio(String codigoSeguimiento) {
@@ -195,18 +232,13 @@ public class EnvioServiceImpl implements EnvioService {
     }
 
     private EnvioResponseDto mapearResponseDto(Envio envio) {
-        EnvioResponseDto dto = new EnvioResponseDto();
-        dto.setAncho(envio.getAncho());
-        dto.setLargo(envio.getLargo());
-        dto.setPeso(envio.getPeso());
-        dto.setEstado(envio.getEstado());
-        dto.setId(envio.getId());
-        dto.setCodigoSeguimiento(envio.getCodigoSeguimiento());
-        dto.setTarifa(envio.getTarifa());
-        if (envio.getCliente() != null) {
-            dto.setClienteId(envio.getCliente().getId());
-            dto.setNombreCliente(envio.getCliente().getNombre());
-        }
-        return dto;
+        return EnvioResponseDto.builder()
+                .id(envio.getId())
+                .codigoSeguimiento(envio.getCodigoSeguimiento())
+                .peso(envio.getPeso())
+                .largo(envio.getLargo())
+                .ancho(envio.getAncho())
+                .estado(envio.getEstado())
+                .build();
     }
 }
