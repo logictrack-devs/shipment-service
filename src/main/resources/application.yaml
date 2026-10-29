@@ -2,15 +2,22 @@ spring:
   application:
     name: shipment-service
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/logitrack}
+    url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
-    security:
-      oauth2:
-        resourceserver:
-          jwt:
-            public-key-location: classpath:certs/public.pem
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080 # O la URL de tu Authorization Server
+
+server:
+  port: ${SERVER_PORT:8081}
+
+courier:
+  service:
+    url: ${COURIER_SERVICE_URL:http://localhost:8082}
+

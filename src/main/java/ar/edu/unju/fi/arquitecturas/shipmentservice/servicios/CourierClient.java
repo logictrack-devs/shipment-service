@@ -4,6 +4,7 @@ package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.RepartidorExternoDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import java.util.UUID;
@@ -13,7 +14,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CourierClient {
 
+
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${courier.service.url}")
+    private String courierServiceUrl;
+
 
     public RepartidorExternoDto obtenerRepartidorPorId(UUID repartidorId) {
         // Esta URL debe apuntar al endpoint real de tu compañero
