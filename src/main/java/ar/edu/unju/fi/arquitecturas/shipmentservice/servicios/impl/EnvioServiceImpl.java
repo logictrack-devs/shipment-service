@@ -19,6 +19,7 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.HistorialEstadoE
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.EnvioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -44,7 +45,9 @@ public class EnvioServiceImpl implements EnvioService {
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final HistorialEstadoEnvioRepository historialRepository;
-    private final RestTemplate restTemplate; // Inyección de tu RestTemplate nativo de Spring
+    private final RestTemplate restTemplate;// Inyección de tu RestTemplate nativo de Spring
+    @Value("${courier.service.url}")
+    private String courierServiceUrl;
 
     @Override
     @Transactional
