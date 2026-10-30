@@ -1,5 +1,11 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl;
-
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest; // (Si usás Spring Boot 2.x, cambialo a javax.servlet.http.HttpServletRequest)
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.RepartidorExternoDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.CambioEstadoRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioRequestDto;
@@ -58,7 +64,6 @@ public class EnvioServiceImpl implements EnvioService {
 
         String codigoSeguimiento = "ENV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
-        Double tarifaCalculada = 1000.0 + (peso * 200.0) + (largo * ancho * alto * 0.1);
 
         // Se usa la alternativa segura de pasar el proxy directo de Hibernate o usar setter por fuera
         Envio nuevoEnvio = Envio.builder()
@@ -67,7 +72,6 @@ public class EnvioServiceImpl implements EnvioService {
                 .largo(largo)
                 .ancho(ancho)
                 .alto(alto)
-                .tarifa(tarifaCalculada)
                 .estado(EstadoEnvio.PENDIENTE)
                 .direccionOrigen(origen)
                 .direccionDestino(destino)
@@ -184,18 +188,41 @@ public class EnvioServiceImpl implements EnvioService {
     /**
      * Valida mediante RestTemplate si el repartidor existe y se encuentra ACTIVO en courier-service.
      */
+
     private void validarRepartidorActivo(UUID repartidorId) {
-        String url = "http://localhost:8082/api/v1/repartidores/" + repartidorId;
+        // Usamos la variable que definiste arriba en lugar de localhost
+        String url = courierServiceUrl + "/api/v1/repartidores/" + repartidorId;
+
         try {
             log.info("Consultando estado del repartidor {} vía RestTemplate", repartidorId);
-            RepartidorExternoDto repartidor = restTemplate.getForObject(url, RepartidorExternoDto.class);
+
+            // 1. Extraemos el Token JWT de la petición que hizo Postman
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            HttpServletRequest request = attributes.getRequest();
+            String token = request.getHeader("Authorization");
+
+            // 2. Armamos las cabeceras (Headers) y le inyectamos el token
+            HttpHeaders headers = new HttpHeaders();
+            if (token != null) {
+                headers.set("Authorization", token);
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            // 3. Hacemos la petición usando exchange() para poder mandar las cabeceras
+            ResponseEntity<RepartidorExternoDto> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    RepartidorExternoDto.class
+            );
+
+            RepartidorExternoDto repartidor = response.getBody();
 
             if (repartidor == null || !"ACTIVO".equalsIgnoreCase(repartidor.getEstado())) {
                 log.warn("El repartidor {} no está ACTIVO en courier-service", repartidorId);
                 throw new ExcepcionesCourier.RepartidorNoActivoException("El repartidor no se encuentra activo.");
             }
         } catch (HttpClientErrorException.NotFound e) {
-            // Excepción nativa de RestTemplate para capturar respuestas 404 de Mica
             log.error("Repartidor con ID {} no encontrado en courier-service (404)", repartidorId);
             throw new RecursoNoEncontradoException("El repartidor con ID " + repartidorId + " no existe.");
         } catch (Exception e) {
@@ -203,6 +230,8 @@ public class EnvioServiceImpl implements EnvioService {
             throw new ExcepcionesCourier.ErrorComunicacionCourierException("Error al validar el repartidor externo.");
         }
     }
+
+
 
     @Override
     @Transactional(readOnly = true)
