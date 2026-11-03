@@ -61,4 +61,19 @@ public class ManejadorExcepcionesGlobal {
                 "mensaje", ex.getMessage()
         ));
     }
+    @ExceptionHandler({ExcepcionesCourier.RepartidorNoActivoException.class,
+            ExcepcionesCourier.AsignacionNoPermitidaException.class})
+    public ResponseEntity<Map<String, Object>> handleConflicto(RuntimeException
+                                                                       ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+// 409
+    }
+    @ExceptionHandler({ExcepcionesCourier.ErrorComunicacionCourierException.class
+            ,
+            ExcepcionesCourier.ServicioNoDisponibleException.class})
+    public ResponseEntity<Map<String, Object>>
+    handleCourierCaido(RuntimeException ex) {
+        return construirRespuesta(HttpStatus.SERVICE_UNAVAILABLE,
+                ex.getMessage()); // 503
+    }
 }

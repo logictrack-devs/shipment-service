@@ -1,4 +1,5 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.CourierClient;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -190,46 +191,20 @@ public class EnvioServiceImpl implements EnvioService {
      */
 
     private void validarRepartidorActivo(UUID repartidorId) {
-        // Usamos la variable que definiste arriba en lugar de localhost
-        String url = courierServiceUrl + "/api/v1/repartidores/" + repartidorId;
-
+        RepartidorExternoDto repartidor;
         try {
-            log.info("Consultando estado del repartidor {} vía RestTemplate", repartidorId);
-
-            // 1. Extraemos el Token JWT de la petición que hizo Postman
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            HttpServletRequest request = attributes.getRequest();
-            String token = request.getHeader("Authorization");
-
-            // 2. Armamos las cabeceras (Headers) y le inyectamos el token
-            HttpHeaders headers = new HttpHeaders();
-            if (token != null) {
-                headers.set("Authorization", token);
-            }
-            HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-            // 3. Hacemos la petición usando exchange() para poder mandar las cabeceras
-            ResponseEntity<RepartidorExternoDto> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    entity,
-                    RepartidorExternoDto.class
-            );
-
-            RepartidorExternoDto repartidor = response.getBody();
-
-            if (repartidor == null || !"ACTIVO".equalsIgnoreCase(repartidor.getEstado())) {
-                log.warn("El repartidor {} no está ACTIVO en courier-service", repartidorId);
-                throw new ExcepcionesCourier.RepartidorNoActivoException("El repartidor no se encuentra activo.");
-            }
-        } catch (HttpClientErrorException.NotFound e) {
-            log.error("Repartidor con ID {} no encontrado en courier-service (404)", repartidorId);
-            throw new RecursoNoEncontradoException("El repartidor con ID " + repartidorId + " no existe.");
-        } catch (Exception e) {
-            log.error("Error de comunicación HTTP con courier-service al validar repartidor {}", repartidorId, e);
-            throw new ExcepcionesCourier.ErrorComunicacionCourierException("Error al validar el repartidor externo.");
+            repartidor = CourierClient.obtenerPorId(repartidorId);
+        } catch (feign.RetryableException e) {
+            throw new ExcepcionesCourier.ServicioNoDisponibleException("courierservice no disponible.");
+        }
+        if (repartidor == null ||
+                !"ACTIVO".equalsIgnoreCase(repartidor.getEstado())) {
+            throw new
+                    ExcepcionesCourier.RepartidorNoActivoException(repartidorId,
+                    repartidor == null ? "DESCONOCIDO" : repartidor.getEstado());
         }
     }
+
 
 
 

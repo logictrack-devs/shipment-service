@@ -35,9 +35,6 @@ public class Envio extends Auditable {
     @Column(name = "largo", nullable = false, scale = 2)
     private Double largo;
 
-    @Column(name = "tarifa", nullable = false, scale = 2)
-    private Double tarifa;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
     @Builder.Default

@@ -1,30 +1,29 @@
 
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios;
-
+import ar.edu.unju.fi.arquitecturas.shipmentservice.config.CourierFeignConfig;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.RepartidorExternoDto;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.RepartidorExternoDto;
+import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
 import java.util.UUID;
 
-@Component
-@Slf4j
-@RequiredArgsConstructor
-public class CourierClient {
-
-
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    @Value("${courier.service.url}")
-    private String courierServiceUrl;
-
-
-    public RepartidorExternoDto obtenerRepartidorPorId(UUID repartidorId) {
-        // Esta URL debe apuntar al endpoint real de tu compañero
-        String url = "http://localhost:8082/api/v1/repartidores/" + repartidorId;
-        log.info("Consultando repartidor via RestTemplate en: {}", url);
-        return restTemplate.getForObject(url, RepartidorExternoDto.class);
+@FeignClient(name = "courier-service", path = "/api/v1/repartidores", configuration = CourierFeignConfig.class)
+public interface CourierClient {
+    @GetMapping("/{id}")
+    static RepartidorExternoDto obtenerPorId(@PathVariable("id") UUID id) {
+        return null;
     }
-}
+
+    @GetMapping("/{id}/disponibilidad")
+        Boolean estaDisponible(@PathVariable("id") UUID id);
+    }
+
+
+
+
