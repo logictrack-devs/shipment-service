@@ -52,7 +52,6 @@ public class EnvioServiceImpl implements EnvioService {
     private final EnvioRepository envioRepository;
     private final ClienteRepository clienteRepository;
     private final HistorialEstadoEnvioRepository historialRepository;
-    private final RestTemplate restTemplate;// Inyección de tu RestTemplate nativo de Spring
     @Value("${courier.service.url}")
     private String courierServiceUrl;
 
