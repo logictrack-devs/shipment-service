@@ -15,7 +15,13 @@ public class Excepciones_envio {
             super("No se puede transicionar el envío desde el estado " + actual + " hacia " + destino);
         }
     }
-
+    // Excepción que devuelve HTTP 409 Conflict si el estado no permite cancelar
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public static class EnvioNoCancelableException extends RuntimeException {
+        public EnvioNoCancelableException(String mensaje) {
+            super(mensaje);
+        }
+    }
     // Excepción para cuando se pasa a EN_RUTA sin un chofer asignado
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public static class RepartidorNoAsignadoException extends RuntimeException {

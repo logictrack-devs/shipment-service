@@ -1,6 +1,7 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.modelo;
 
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,9 +28,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Direccion {
-
+    @NotBlank(message = "La calle es obligatoria")
     private String calle;
+    @NotBlank(message = "El número es obligatorio")
     private String numero;
+    @NotBlank(message = "La ciudad es obligatoria")
     private String ciudad;
+    @NotBlank(message = "El código postal es obligatorio")
     private String codigoPostal;
 }

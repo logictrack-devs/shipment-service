@@ -17,9 +17,12 @@ public class EnvioResponseDto {
     private Double peso;
     private Double ancho;
     private Double largo;
+    private Double alto;
     private EstadoEnvio estado;
     private Direccion origen;
     private Direccion destino;
     private UUID clienteId;
     private String nombreCliente;
+    private String emailCliente;     // 👈 NUEVO
+    private UUID repartidorId;      // 👈 NUEVO
 }

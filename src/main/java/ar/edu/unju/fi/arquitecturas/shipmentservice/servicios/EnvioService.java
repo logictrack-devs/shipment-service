@@ -8,7 +8,7 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.HistorialEstado
 import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Cliente;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Direccion;
-
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioCreateRequestDto;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,6 +18,10 @@ public interface EnvioService {
     EnvioResponseDto getByCodigoSeguimiento(String codigoSeguimiento);
     EnvioResponseDto updateEnvio(String codigoSeguimiento, EnvioRequestDto request);
     List<EnvioResponseDto> listAllEnvios();
+    // Import nuevo necesario:
+    EnvioResponseDto cancelarEnvioPorId(UUID envioId);
+    // Método a agregar en la interface:
+    EnvioResponseDto registrarEnvio(EnvioCreateRequestDto request);
     List<EnvioResponseDto> listByEstado(EstadoEnvio estado);
     EnvioResponseDto cambiarEstado(UUID id, CambioEstadoRequestDto request);
     List<HistorialEstadoResponseDto> obtenerHistorial(UUID envioId);

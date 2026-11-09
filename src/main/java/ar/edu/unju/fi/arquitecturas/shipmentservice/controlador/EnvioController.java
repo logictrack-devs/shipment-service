@@ -1,8 +1,10 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.controlador;
 
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.CambioEstadoRequestDto;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioCreateRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.EnvioResponseDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.response.HistorialEstadoResponseDto;
+import ar.edu.unju.fi.arquitecturas.shipmentservice.enums.EstadoEnvio;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.modelo.Cliente;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.EnvioService;
 import jakarta.validation.Valid;
@@ -38,7 +40,7 @@ public class EnvioController {
      * @param ancho Ancho del paquete.
      * @return DTO del envío creado con código HTTP 201 Created.
      */
-    @PostMapping
+    /*@PostMapping
     public ResponseEntity<EnvioResponseDto> registrarEnvio(
             @RequestParam UUID clienteId,
             @RequestParam Double peso,
@@ -49,7 +51,7 @@ public class EnvioController {
         cliente.setId(clienteId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(envioService.registrarEnvio(peso, largo, ancho, alto, cliente, null, null));
-    }
+    }/*
 
     /**
      * Obtiene los detalles de un envío por su identificador único.
@@ -57,6 +59,26 @@ public class EnvioController {
      * @param id UUID del envío.
      * @return DTO con la información del envío.
      */
+    /**
+     * Lista todos los envíos registrados, opcionalmente filtrados por estado.
+     */
+    @GetMapping
+    public ResponseEntity<List<EnvioResponseDto>> listarEnvios(@RequestParam(required = false) EstadoEnvio estado) {
+        if (estado != null) {
+            return ResponseEntity.ok(envioService.listByEstado(estado));
+        }
+        return ResponseEntity.ok(envioService.listAllEnvios());
+    }
+
+    /**
+     * Cancela un envío en estado PENDIENTE por su código de seguimiento.
+     */
+    @DeleteMapping("/cancelar/{codigoSeguimiento}")
+    public ResponseEntity<Void> cancelarEnvio(@PathVariable String codigoSeguimiento) {
+        envioService.cancelarEnvio(codigoSeguimiento);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<EnvioResponseDto> obtenerPorId(@PathVariable UUID id) {
         return ResponseEntity.ok(envioService.getById(id));
@@ -91,4 +113,20 @@ public class EnvioController {
         EnvioResponseDto response = envioService.asignarRepartidor(envioId, repartidorId);
         return ResponseEntity.ok(response);
     }
+    @PostMapping
+    public ResponseEntity<EnvioResponseDto> registrarEnvio(
+            @Valid @RequestBody EnvioCreateRequestDto request) { // 👈 Aquí se recibe
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(envioService.registrarEnvio(request));
+    }
+    /**
+     * C. Cancela un envío en estado PENDIENTE.
+     * Si el estado actual no permite cancelar, responde 409 Conflict.
+     */
+    @PostMapping("/{id}/cancelar")
+    public ResponseEntity<EnvioResponseDto> cancelarEnvio(@PathVariable UUID id) {
+        return ResponseEntity.ok(envioService.cancelarEnvioPorId(id));
+    }
+
 }

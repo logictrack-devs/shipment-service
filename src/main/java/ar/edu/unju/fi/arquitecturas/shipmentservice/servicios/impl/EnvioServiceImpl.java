@@ -1,6 +1,7 @@
 
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl;
 
+import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioCreateRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.CourierClient;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.RepartidorExternoDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.CambioEstadoRequestDto;
@@ -19,9 +20,10 @@ import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.ClienteRepositor
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.EnvioRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.repositorio.HistorialEstadoEnvioRepository;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.EnvioService;
-
+import org.springframework.security.core.Authentication;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -136,8 +138,37 @@ public class EnvioServiceImpl implements EnvioService {
 
         return mapearResponseDto(envioNuevo);
     }
-
     @Override
+    @Transactional
+    public EnvioResponseDto registrarEnvio(EnvioCreateRequestDto request) {
+        log.info("Registrando envío para el cliente con ID: {}", request.getClienteId());
+
+        Cliente clienteEnvio = clienteRepository.findById(request.getClienteId())
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Cliente no encontrado con ID: " + request.getClienteId()
+                ));
+
+        String codigoSeguimiento = "ENV-"
+                + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+
+        Envio nuevoEnvio = Envio.builder()
+                .codigoSeguimiento(codigoSeguimiento)
+                .peso(request.getPeso())
+                .largo(request.getLargo())
+                .ancho(request.getAncho())
+                .alto(request.getAlto())
+                .estado(EstadoEnvio.PENDIENTE)
+                .direccionOrigen(request.getOrigen())
+                .direccionDestino(request.getDestino())
+                .build();
+
+        nuevoEnvio.setCliente(clienteEnvio);
+
+        Envio envioGuardado = envioRepository.save(nuevoEnvio);
+
+        return mapearResponseDto(envioGuardado);
+    }
+   /* @Override
     @Transactional(readOnly = true)
     public List<EnvioResponseDto> listAllEnvios() {
 
@@ -146,7 +177,7 @@ public class EnvioServiceImpl implements EnvioService {
                 .collect(Collectors.toList());
     }
 
-    @Override
+   /* @Override
     @Transactional(readOnly = true)
     public List<EnvioResponseDto> listByEstado(EstadoEnvio estado) {
 
@@ -154,7 +185,7 @@ public class EnvioServiceImpl implements EnvioService {
                 .map(this::mapearResponseDto)
                 .filter(envio -> envio.getEstado() == estado)
                 .collect(Collectors.toList());
-    }
+    }*/
 
     @Override
     @Transactional
@@ -340,7 +371,120 @@ public class EnvioServiceImpl implements EnvioService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EnvioResponseDto> listAllEnvios() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        // Si es CLIENTE, solo devuelve los envíos que le pertenecen
+        if (esCliente(auth)) {
+            Cliente cliente = obtenerClienteAutenticado(auth);
+            if (cliente == null) {
+                return List.of(); // Si el cliente no existe en la BD, lista vacía
+            }
+            return envioRepository.findByClienteId(cliente.getId()).stream()
+                    .map(this::mapearResponseDto)
+                    .collect(Collectors.toList());
+        }
+
+        // ADMIN o REPARTIDOR (o pruebas unitarias): ven todos los envíos
+        return envioRepository.findAll().stream()
+                .map(this::mapearResponseDto)
+                .collect(Collectors.toList());
+    }
+    @Override
+    @Transactional
+    public EnvioResponseDto cancelarEnvioPorId(UUID envioId) {
+        log.info("Cancelando envío con ID: {}", envioId);
+
+        Envio envio = envioRepository.findById(envioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe el envío con ID: " + envioId
+                ));
+
+        // Regla de negocio: Si NO está PENDIENTE, responde 409 Conflict
+        if (envio.getEstado() != EstadoEnvio.PENDIENTE) {
+            throw new Excepciones_envio.EnvioNoCancelableException(
+                    "No se puede cancelar el envío porque se encuentra en estado " + envio.getEstado()
+            );
+        }
+
+        // Control de pertenencia: Si es CLIENTE, solo puede cancelar su propio envío
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (esCliente(auth)) {
+            Cliente cliente = obtenerClienteAutenticado(auth);
+            if (cliente == null || !envio.getCliente().getId().equals(cliente.getId())) {
+                throw new Excepciones_envio.EnvioNoCancelableException(
+                        "No estás autorizado a cancelar un envío que pertenece a otro cliente"
+                );
+            }
+        }
+
+        EstadoEnvio estadoAnterior = envio.getEstado();
+        envio.setEstado(EstadoEnvio.CANCELADO);
+        Envio envioGuardado = envioRepository.save(envio);
+
+        // Persiste el cambio en el historial de trazabilidad
+        historialRepository.save(
+                HistorialEstadoEnvio.builder()
+                        .envio(envioGuardado)
+                        .estadoAnterior(estadoAnterior)
+                        .estadoNuevo(EstadoEnvio.CANCELADO)
+                        .fechaCambio(LocalDateTime.now())
+                        .observacion("Envío cancelado a solicitud del usuario")
+                        .build()
+        );
+
+        log.info("El envío {} ha sido cancelado y persistido con éxito.", envio.getCodigoSeguimiento());
+        return mapearResponseDto(envioGuardado);
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public List<EnvioResponseDto> listByEstado(EstadoEnvio estado) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        // Si es CLIENTE, filtra por estado solo dentro de sus propios envíos
+        if (esCliente(auth)) {
+            Cliente cliente = obtenerClienteAutenticado(auth);
+            if (cliente == null) {
+                return List.of();
+            }
+            return envioRepository.findByClienteIdAndEstado(cliente.getId(), estado).stream()
+                    .map(this::mapearResponseDto)
+                    .collect(Collectors.toList());
+        }
+
+        // ADMIN o REPARTIDOR: ven todos los envíos de ese estado
+        return envioRepository.findAll().stream()
+                .filter(envio -> envio.getEstado() == estado)
+                .map(this::mapearResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    // Métodos auxiliares privados para evaluar el rol y obtener el cliente:
+    private boolean esCliente(Authentication auth) {
+        if (auth == null || auth.getAuthorities() == null) return false;
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE") || a.getAuthority().equals("CLIENTE"));
+    }
+
+    private Cliente obtenerClienteAutenticado(Authentication auth) {
+        if (auth == null) return null;
+        String usernameOrEmail = auth.getName();
+        return clienteRepository.findByEmail(usernameOrEmail)
+                .or(() -> clienteRepository.findByNombre(usernameOrEmail))
+                .orElse(null);
+    }
     private EnvioResponseDto mapearResponseDto(Envio envio) {
+        String emailCliente = null;
+        UUID clienteId = null;
+        String nombreCliente = null;
+
+        if (envio.getCliente() != null) {
+            clienteId = envio.getCliente().getId();
+            nombreCliente = envio.getCliente().getNombre();
+            emailCliente = envio.getCliente().getEmail(); // 👈 NUEVO
+        }
 
         return EnvioResponseDto.builder()
                 .id(envio.getId())
@@ -348,7 +492,14 @@ public class EnvioServiceImpl implements EnvioService {
                 .peso(envio.getPeso())
                 .largo(envio.getLargo())
                 .ancho(envio.getAncho())
+                .alto(envio.getAlto())
                 .estado(envio.getEstado())
+                .origen(envio.getDireccionOrigen())
+                .destino(envio.getDireccionDestino())
+                .clienteId(clienteId)
+                .nombreCliente(nombreCliente)
+                .emailCliente(emailCliente)                   // 👈 NUEVO
+                .repartidorId(envio.getRepartidorId())
                 .build();
     }
 }
