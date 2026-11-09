@@ -70,14 +70,6 @@ public class EnvioController {
         return ResponseEntity.ok(envioService.listAllEnvios());
     }
 
-    /**
-     * Cancela un envío en estado PENDIENTE por su código de seguimiento.
-     */
-    @DeleteMapping("/cancelar/{codigoSeguimiento}")
-    public ResponseEntity<Void> cancelarEnvio(@PathVariable String codigoSeguimiento) {
-        envioService.cancelarEnvio(codigoSeguimiento);
-        return ResponseEntity.noContent().build();
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<EnvioResponseDto> obtenerPorId(@PathVariable UUID id) {

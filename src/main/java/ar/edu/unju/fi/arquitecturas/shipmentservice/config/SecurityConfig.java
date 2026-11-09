@@ -35,7 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**", "/error").permitAll()
 
                         // 2. Gestión de Clientes (Solo ADMIN)
-                        .requestMatchers("/clientes/**").hasRole("ADMIN")
+                        .requestMatchers("/clientes", "/clientes/**").hasRole("ADMIN")
 
                         // 3. Asignar Repartidor (Solo ADMIN)
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/envios/*/asignar-repartidor/*").hasRole("ADMIN")

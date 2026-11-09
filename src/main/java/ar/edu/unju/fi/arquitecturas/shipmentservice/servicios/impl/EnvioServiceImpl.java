@@ -1,5 +1,6 @@
 
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.access.AccessDeniedException;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioCreateRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.CourierClient;
@@ -145,7 +146,7 @@ public class EnvioServiceImpl implements EnvioService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (esCliente(auth)) {
             Cliente cliente = obtenerClienteAutenticado(auth);
-            if (cliente != null && !cliente.getId().equals(request.getClienteId())) {
+            if (cliente == null && !cliente.getId().equals(request.getClienteId())) {
                 throw new AccessDeniedException("No puedes registrar envíos a nombre de otro cliente");
             }
         }
@@ -330,7 +331,6 @@ public class EnvioServiceImpl implements EnvioService {
                         "No existe el envío con ID: " + envioId
                 ));
         validarPertenenciaCliente(envio); // ✅ Ahora sí existe 'envio'
-        validarPertenenciaCliente(envio);
         return historialRepository.findByEnvioIdOrderByFechaCambioAsc(envioId)
                 .stream()
                 .map(h -> HistorialEstadoResponseDto.builder()
@@ -412,29 +412,20 @@ public class EnvioServiceImpl implements EnvioService {
                         "No existe el envío con ID: " + envioId
                 ));
 
-        // Regla de negocio: Si NO está PENDIENTE, responde 409 Conflict
+        // 1. Validar pertenencia primero (lanza 403 Forbidden si no le pertenece)
+        validarPertenenciaCliente(envio);
+
+        // 2. Comprobar regla de negocio (lanza 409 Conflict si no está PENDIENTE)
         if (envio.getEstado() != EstadoEnvio.PENDIENTE) {
             throw new Excepciones_envio.EnvioNoCancelableException(
                     "No se puede cancelar el envío porque se encuentra en estado " + envio.getEstado()
             );
         }
 
-        // Control de pertenencia: Si es CLIENTE, solo puede cancelar su propio envío
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (esCliente(auth)) {
-            Cliente cliente = obtenerClienteAutenticado(auth);
-            if (cliente == null || !envio.getCliente().getId().equals(cliente.getId())) {
-                throw new Excepciones_envio.EnvioNoCancelableException(
-                        "No estás autorizado a cancelar un envío que pertenece a otro cliente"
-                );
-            }
-        }
-
         EstadoEnvio estadoAnterior = envio.getEstado();
         envio.setEstado(EstadoEnvio.CANCELADO);
         Envio envioGuardado = envioRepository.save(envio);
 
-        // Persiste el cambio en el historial de trazabilidad
         historialRepository.save(
                 HistorialEstadoEnvio.builder()
                         .envio(envioGuardado)
@@ -479,11 +470,17 @@ public class EnvioServiceImpl implements EnvioService {
     }
 
     private Cliente obtenerClienteAutenticado(Authentication auth) {
-        if (auth == null) return null;
-        String usernameOrEmail = auth.getName();
-        return clienteRepository.findByEmail(usernameOrEmail)
-                .or(() -> clienteRepository.findByNombre(usernameOrEmail))
-                .orElse(null);
+        if (!(auth instanceof JwtAuthenticationToken jwtAuth)) {
+            return null;
+        }
+
+        String email = jwtAuth.getToken().getClaimAsString("email");
+
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+
+        return clienteRepository.findByEmail(email).orElse(null);
     }
     /**
      * Valida que si el usuario autenticado tiene rol CLIENTE, el envío le pertenezca.
