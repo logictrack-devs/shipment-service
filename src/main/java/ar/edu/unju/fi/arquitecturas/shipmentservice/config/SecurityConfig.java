@@ -1,5 +1,6 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.config;
 
+import jakarta.ws.rs.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration; // AGREGADA
@@ -27,9 +28,28 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        // ACÁ PUSE TUS RUTAS DE REPARTIDORES
-                        .requestMatchers("/api/repartidores/**").hasAnyRole("REPARTIDOR", "ADMIN")
+                        // 1. Actuator y endpoints públicos
+                        .requestMatchers("/actuator/**", "/error").permitAll()
+
+                        // 2. Gestión de Clientes (Solo ADMIN)
+                        .requestMatchers("/clientes/**").hasRole("ADMIN")
+
+                        // 3. Asignar Repartidor (Solo ADMIN)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/envios/*/asignar-repartidor/*").hasRole("ADMIN")
+
+                        // 4. Cambiar Estado de Envío (ADMIN y REPARTIDOR)
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/envios/*/estado").hasAnyRole("ADMIN", "REPARTIDOR")
+
+                        // 5. Cancelar Envío (ADMIN y CLIENTE)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/envios/*/cancelar").hasAnyRole("ADMIN", "CLIENTE")
+
+                        // 6. Crear Envío (ADMIN y CLIENTE)
+                        .requestMatchers(HttpMethod.POST, "/api/v1/envios").hasAnyRole("ADMIN", "CLIENTE")
+
+                        // 7. Consultar Envíos (ADMIN, REPARTIDOR y CLIENTE)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/envios/**").hasAnyRole("ADMIN", "CLIENTE", "REPARTIDOR")
+
+                        // Cualquier otra petición debe estar autenticada
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(j ->
                         j.jwtAuthenticationConverter(converter())))
