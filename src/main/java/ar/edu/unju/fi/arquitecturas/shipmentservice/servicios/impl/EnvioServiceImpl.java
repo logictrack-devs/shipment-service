@@ -264,6 +264,9 @@ public class EnvioServiceImpl implements EnvioService {
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe el envío con ID: " + envioId
                 ));
+        if (envio.getEstado() != EstadoEnvio.PENDIENTE) {
+            throw new ExcepcionesCourier.AsignacionNoPermitidaException(envioId, envio.getEstado());
+        }
 
         // Validación mediante OpenFeign
         validarRepartidorActivo(repartidorId);
