@@ -99,4 +99,5 @@ public class ManejadorExcepcionesGlobal {
         body.put("mensaje", mensaje);
         return ResponseEntity.status(status).body(body);
     }
+
 }
