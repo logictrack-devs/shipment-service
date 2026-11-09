@@ -1,6 +1,6 @@
 
 package ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.impl;
-
+import org.springframework.security.access.AccessDeniedException;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.request.EnvioCreateRequestDto;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.servicios.CourierClient;
 import ar.edu.unju.fi.arquitecturas.shipmentservice.dto.RepartidorExternoDto;
@@ -103,7 +103,7 @@ public class EnvioServiceImpl implements EnvioService {
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Envío no encontrado."
                 ));
-
+        validarPertenenciaCliente(envio);
         return mapearResponseDto(envio);
     }
 
@@ -117,7 +117,7 @@ public class EnvioServiceImpl implements EnvioService {
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Envío no encontrado."
                 ));
-
+        validarPertenenciaCliente(envio);
         return mapearResponseDto(envio);
     }
 
@@ -142,6 +142,13 @@ public class EnvioServiceImpl implements EnvioService {
     @Transactional
     public EnvioResponseDto registrarEnvio(EnvioCreateRequestDto request) {
         log.info("Registrando envío para el cliente con ID: {}", request.getClienteId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (esCliente(auth)) {
+            Cliente cliente = obtenerClienteAutenticado(auth);
+            if (cliente != null && !cliente.getId().equals(request.getClienteId())) {
+                throw new AccessDeniedException("No puedes registrar envíos a nombre de otro cliente");
+            }
+        }
 
         Cliente clienteEnvio = clienteRepository.findById(request.getClienteId())
                 .orElseThrow(() -> new RecursoNoEncontradoException(
@@ -318,12 +325,12 @@ public class EnvioServiceImpl implements EnvioService {
     @Transactional(readOnly = true)
     public List<HistorialEstadoResponseDto> obtenerHistorial(UUID envioId) {
 
-        if (!envioRepository.existsById(envioId)) {
-            throw new RecursoNoEncontradoException(
-                    "No existe el envío con ID: " + envioId
-            );
-        }
-
+        Envio envio = envioRepository.findById(envioId)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No existe el envío con ID: " + envioId
+                ));
+        validarPertenenciaCliente(envio); // ✅ Ahora sí existe 'envio'
+        validarPertenenciaCliente(envio);
         return historialRepository.findByEnvioIdOrderByFechaCambioAsc(envioId)
                 .stream()
                 .map(h -> HistorialEstadoResponseDto.builder()
@@ -348,7 +355,7 @@ public class EnvioServiceImpl implements EnvioService {
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Envío no encontrado."
                 ));
-
+        validarPertenenciaCliente(envio);
         if (envio.getEstado() == EstadoEnvio.PENDIENTE) {
 
             EnvioRequestDto envioCancelar = new EnvioRequestDto(
@@ -477,6 +484,19 @@ public class EnvioServiceImpl implements EnvioService {
         return clienteRepository.findByEmail(usernameOrEmail)
                 .or(() -> clienteRepository.findByNombre(usernameOrEmail))
                 .orElse(null);
+    }
+    /**
+     * Valida que si el usuario autenticado tiene rol CLIENTE, el envío le pertenezca.
+     * Si no le pertenece, lanza AccessDeniedException (403 Forbidden).
+     */
+    private void validarPertenenciaCliente(Envio envio) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (esCliente(auth)) {
+            Cliente cliente = obtenerClienteAutenticado(auth);
+            if (cliente == null || envio.getCliente() == null || !envio.getCliente().getId().equals(cliente.getId())) {
+                throw new AccessDeniedException("No estás autorizado a consultar o modificar un envío de otro cliente");
+            }
+        }
     }
     private EnvioResponseDto mapearResponseDto(Envio envio) {
         String emailCliente = null;

@@ -1,12 +1,14 @@
 package ar.edu.unju.fi.arquitecturas.shipmentservice.config;
 
-import jakarta.ws.rs.HttpMethod;
+import org.springframework.http.HttpMethod;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration; // AGREGADA
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity; // AGREGADA
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -17,6 +19,7 @@ import java.security.KeyFactory;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Locale;
 
 @Configuration          // NO TE OLVIDES DE ESTA
 @EnableMethodSecurity   // Y DE ESTA
@@ -61,11 +64,19 @@ public class SecurityConfig {
         var authorities = new JwtGrantedAuthoritiesConverter();
         authorities.setAuthoritiesClaimName("roles");
         authorities.setAuthorityPrefix("");
-        var c = new JwtAuthenticationConverter();
-        c.setJwtGrantedAuthoritiesConverter(authorities);
-        return c;
-    }
 
+        var converter = new JwtAuthenticationConverter();
+
+        converter.setJwtGrantedAuthoritiesConverter(jwt ->
+                authorities.convert(jwt).stream()
+                        .map(a -> a.getAuthority().toUpperCase(Locale.ROOT))
+                        .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                        .map(r -> (GrantedAuthority) new SimpleGrantedAuthority(r))
+                        .toList()
+        );
+
+        return converter;
+    }
     @Value("classpath:certs/public.pem")
     private org.springframework.core.io.Resource publicKeyResource;
 
