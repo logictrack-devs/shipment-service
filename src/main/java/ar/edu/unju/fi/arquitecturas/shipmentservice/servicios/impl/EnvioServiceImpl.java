@@ -146,7 +146,7 @@ public class EnvioServiceImpl implements EnvioService {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (esCliente(auth)) {
             Cliente cliente = obtenerClienteAutenticado(auth);
-            if (cliente == null && !cliente.getId().equals(request.getClienteId())) {
+            if (cliente == null || !cliente.getId().equals(request.getClienteId())) {
                 throw new AccessDeniedException("No puedes registrar envíos a nombre de otro cliente");
             }
         }
